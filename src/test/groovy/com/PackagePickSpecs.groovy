@@ -8,7 +8,7 @@ import org.junit.Test
  */
 
 
-class PackagePickTests {
+class PackagePickSpecs {
 
     @Test
     void "should remove all white spaces pick the package"() {

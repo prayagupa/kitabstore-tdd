@@ -7,7 +7,7 @@ import spock.lang.Specification
  * on 1/5/16.
  */
 
-class BeardDownloadTests extends Specification {
+class BeardDownloadSpecs extends Specification {
     def counter
 
     def setup () {
