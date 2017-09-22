@@ -5,7 +5,7 @@ import scala.collection.JavaConverters
 import scala.collection.Map
 import spock.lang.Specification
 
-class MoustacheSpecs extends Specification {
+class ScalacGroovySpecs extends Specification {
 
     def 'can invoke scala Map[K, V]'() {
 

@@ -1,4 +1,4 @@
-package com
+package com.beard
 
 import org.junit.Test
 
@@ -6,7 +6,6 @@ import org.junit.Test
  * Created by prayagupd
  * on 2/8/16.
  */
-
 
 class PackagePickSpecs {
 

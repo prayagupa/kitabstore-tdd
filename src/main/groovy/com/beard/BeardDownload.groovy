@@ -1,10 +1,10 @@
-package com
+package com.beard
 /**
  * Created by prayagupd
  * on 1/5/16.
  */
 
-class BeardDownload {
+public class BeardDownload {
 
     private List<Person> persons
 

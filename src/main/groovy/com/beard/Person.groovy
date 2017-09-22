@@ -1,4 +1,4 @@
-package com
+package com.beard
 
 /**
  * Created by prayagupd
