@@ -1,4 +1,4 @@
-package com.beard.beard
+package com.beard
 
 class CompanionWorld {
   import CompanionWorld._
@@ -6,5 +6,5 @@ class CompanionWorld {
 }
 
 object CompanionWorld {
-  val SingletonName = "prayagupd"
+  val SingletonName = "who cares about you"
 }

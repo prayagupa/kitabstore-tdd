@@ -18,7 +18,7 @@ dependencies {
 sourceSets {
     main {
         scala {
-            srcDirs = ['src/main/groovy']
+            srcDirs = ['src/main/groovy', 'src/main/scala']
         }
     }
 
