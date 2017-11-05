@@ -18,6 +18,7 @@ class PerfSpec extends Specification {
 
     def actorSystem = ActorSystem.create()
     def actorExecutionHelper = ActorMaterializer.create(actorSystem)
+    def endpointResourceLocator = "http://jsonplaceholder.typicode.com/posts"
 
     def "can send 100 requests and log time"() {
 
@@ -87,7 +88,6 @@ class PerfSpec extends Specification {
 
     }
 
-
     def "can send 100 requests and log time and wait until all complete, and test the result"() {
 
         given:
@@ -95,34 +95,34 @@ class PerfSpec extends Specification {
         def numberOfLogicalCores =  Runtime.getRuntime().availableProcessors()
 
         def requestIds = []
-        100.times {x -> requestIds + "API REQUEST $x"}
+        concurrencyFactor.times {x -> requestIds + "API REQUEST $x"}
 
-        def pool = Executors.newFixedThreadPool(4)
-
-        def requests = (1..concurrencyFactor).collect {
-            new Callable<String>() {
-
-                String call() throws Exception {
-                    httpProcess(it)
-                }
-            }
-        }
+        def requests = (1..concurrencyFactor).collect { id -> httpReq { syncHttpProcess(id) } }
 
         when:
-        def start = System.currentTimeMillis()
-        def futures = pool.invokeAll(requests)
-        def end = System.currentTimeMillis()
+        def httpPerf = new HTTPPerf(concurrencyFactor)
+        def processedResults = httpPerf.concurrentRequests(requests)
+
+        def p = httpPerf.concurrentRequestsResults(requests)
+        def p2 = httpPerf.concurrentRequestsResults(requests)
 
         then:
-        def took = "${end - start}"
-        println("${concurrencyFactor} requests/" + took + "ms")
-
-        futures.collect{f -> f.get()} == ["200"] * 5
+        processedResults.first.collect{f -> f.get()} == ["200"] * concurrencyFactor
+        p.first == ["200"] * 5
 
         def expected = 600
-        println(took <= expected)
-        assert took < expected
+        println(processedResults.second <= expected)
+        assert processedResults.second < expected
 
+    }
+
+    def httpReq(Closure closure) {
+        new Callable<String>() {
+
+            String call() throws Exception {
+                return closure()
+            }
+        }
     }
 
     String httpProcessor(int requestID) {
@@ -141,10 +141,9 @@ class PerfSpec extends Specification {
         result.toCompletableFuture().get()
     }
 
-    String httpProcess(def request) {
+    String syncHttpProcess(def request) {
         println("Starting $request")
-        def http = new URL("http://jsonplaceholder.typicode.com/posts").openConnection() as HttpURLConnection
-
+        def http = new URL(endpointResourceLocator).openConnection() as HttpURLConnection
         //http.getInputStream().getText("UTF-8")
         http.getResponseCode()
     }
