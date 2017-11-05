@@ -10,6 +10,8 @@ import spock.lang.Specification
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
 
+import static com.beard.Http.httpGet
+
 class PerfSpec extends Specification {
 
     def EachRequestProcessingTime = 1000
@@ -97,7 +99,7 @@ class PerfSpec extends Specification {
         def requestIds = []
         concurrencyFactor.times {x -> requestIds + "API REQUEST $x"}
 
-        def requests = (1..concurrencyFactor).collect { id -> httpReq { syncHttpProcess(id) } }
+        def requests = (1..concurrencyFactor).collect { id -> httpReq { httpGet(endpointResourceLocator, id) } }
 
         when:
         def httpPerf = new HTTPPerf(concurrencyFactor)
@@ -141,10 +143,4 @@ class PerfSpec extends Specification {
         result.toCompletableFuture().get()
     }
 
-    String syncHttpProcess(def request) {
-        println("Starting $request")
-        def http = new URL(endpointResourceLocator).openConnection() as HttpURLConnection
-        //http.getInputStream().getText("UTF-8")
-        http.getResponseCode()
-    }
 }
