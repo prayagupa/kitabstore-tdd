@@ -3,16 +3,12 @@ package com.beard
 import akka.actor.ActorSystem
 import akka.http.javadsl.Http
 import akka.http.javadsl.model.HttpRequest
-import akka.http.javadsl.model.HttpResponse
 import akka.stream.ActorMaterializer
 import groovy.json.JsonSlurper
 import spock.lang.Specification
 
 import java.util.concurrent.Callable
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
-import java.util.function.BiConsumer
-import java.util.function.Function
 
 class PerfSpec extends Specification {
 
@@ -20,11 +16,8 @@ class PerfSpec extends Specification {
 
     def json = new JsonSlurper()
 
-    String httpProcessor(int requestID) {
-        println("processing ${requestID}")
-        Thread.sleep(EachRequestProcessingTime)
-        requestID
-    }
+    def actorSystem = ActorSystem.create()
+    def actorExecutionHelper = ActorMaterializer.create(actorSystem)
 
     def "can send 100 requests and log time"() {
 
@@ -90,38 +83,15 @@ class PerfSpec extends Specification {
 
         then:
         println(took <= (concurrencyFactor/numberOfLogicalCores) * (2 * EachRequestProcessingTime))
-        took <= ((concurrencyFactor/(numberOfLogicalCores * 2) * EachRequestProcessingTime) + 200)
+        took <= ((concurrencyFactor/(numberOfLogicalCores * 2) * EachRequestProcessingTime) + 400)
 
     }
 
 
     def "can send 100 requests and log time and wait until all complete, and test the result"() {
 
-        when:
-        def actorSystem = ActorSystem.create()
-        def actorExecutionHelper = ActorMaterializer.create(actorSystem)
-
-        def result = Http.get(actorSystem)
-            .singleRequest(HttpRequest.create("http://jsonplaceholder.typicode.com/posts"), actorExecutionHelper)
-
-        then:
-
-//        sleep(5000)
-
-//        result.whenComplete(new BiConsumer<HttpResponse, Throwable>() {
-//            @Override
-//            void accept(HttpResponse httpResponse, Throwable throwable) {
-//                println("http response " + httpResponse.status())
-//                println("iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii")
-//            }
-//        })
-
-        def r = result.toCompletableFuture().get()
-
-        println(r.status())
-        println("ghhhvkhgghfhgfhgfghfhghhfhffh")
-
-        def concurrencyFactor = 100
+        given:
+        def concurrencyFactor = 5
         def numberOfLogicalCores =  Runtime.getRuntime().availableProcessors()
 
         def requestIds = []
@@ -133,25 +103,49 @@ class PerfSpec extends Specification {
             new Callable<String>() {
 
                 String call() throws Exception {
-                    return httpProcessor(it)
+                    httpProcess(it)
                 }
             }
         }
 
+        when:
         def start = System.currentTimeMillis()
-
         def futures = pool.invokeAll(requests)
         def end = System.currentTimeMillis()
 
+        then:
         def took = "${end - start}"
         println("${concurrencyFactor} requests/" + took + "ms")
 
-        println(futures.collect{f -> f.get()})
+        futures.collect{f -> f.get()} == ["200"] * 5
 
-        then:
-        println(took <= (concurrencyFactor/numberOfLogicalCores) * (2 * EachRequestProcessingTime))
-        took <= ((concurrencyFactor/(numberOfLogicalCores * 2) * EachRequestProcessingTime) + 200)
+        def expected = 600
+        println(took <= expected)
+        assert took < expected
 
     }
 
+    String httpProcessor(int requestID) {
+        println("processing ${requestID}")
+        Thread.sleep(EachRequestProcessingTime)
+        requestID
+    }
+
+    def process(def request, def endpoint) {
+
+        println("Processing $request")
+
+        def result = Http.get(actorSystem)
+                .singleRequest(HttpRequest.create(endpoint), actorExecutionHelper)
+
+        result.toCompletableFuture().get()
+    }
+
+    String httpProcess(def request) {
+        println("Starting $request")
+        def http = new URL("http://jsonplaceholder.typicode.com/posts").openConnection() as HttpURLConnection
+
+        //http.getInputStream().getText("UTF-8")
+        http.getResponseCode()
+    }
 }
