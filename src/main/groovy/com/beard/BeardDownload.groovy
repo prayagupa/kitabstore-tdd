@@ -19,4 +19,18 @@ public class BeardDownload {
     public def setPersons(def p) {
         this.persons = p
     }
+
+    String doSomething(Closure<String> fn, def param) {
+        fn(param)
+    }
+
+    Integer doSomething(Closure<Integer> fn) {
+        fn()
+    }
+
+    def closure(String x1, int y1) {
+        { String x, int y ->
+            println "hey ${x} the value is ${y}"
+        }
+    }
 }
